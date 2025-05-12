@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Spotify Info Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #1DB954;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .info {
+            margin-top: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .download-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #1DB954;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .download-btn:hover {
+            background-color: #17a44c;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Spotify Info Downloader</h1>
+
+<input type="text" id="spotifyUrl" placeholder="Masukkan URL lagu Spotify">
+<button onclick="getTrackInfo()">Ambil Info Lagu</button>
+
+<div id="result" class="info" style="display: none;">
+    <h2 id="title"></h2>
+    <p id="artist"></p>
+    <img id="artwork" src="" alt="Artwork">
+    <button id="downloadBtn" class="download-btn" onclick="downloadFile()" style="display: none;">Download Lagu</button>
+</div>
+
+<script>
+    async function getTrackInfo() {
+        const url = document.getElementById('spotifyUrl').value;
+
+        try {
+            const response = await fetch('/api/trackinfo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+
+            const { success, message, title, artist, artworkUrl, downloadLink } = await response.json();
+
+            const resultDiv = document.getElementById('result');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            if (success) {
+                document.getElementById('title').textContent = title;
+                document.getElementById('artist').textContent = "Artis: " + artist;
+                document.getElementById('artwork').src = artworkUrl;
+
+                if (downloadLink) {
+                    downloadBtn.setAttribute('data-download-link', downloadLink);
+                    downloadBtn.style.display = 'inline-block';
+                } else {
+                    downloadBtn.style.display = 'none';
+                }
+
+                resultDiv.style.display = "block";
+            } else {
+                alert("Gagal: " + message);
+                resultDiv.style.display = "none";
+            }
+        } catch (err) {
+            alert("Terjadi kesalahan saat mengambil data.");
+            console.error(err);
+        }
+    }
+
+    function downloadFile() {
+        const downloadLink = document.getElementById('downloadBtn').getAttribute('data-download-link');
+        
+        if (downloadLink) {
+            // Menggunakan fetch untuk mendownload file secara langsung
+            fetch(downloadLink)
+                .then(response => response.blob())
+                .then(blob => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'download.mp3'; // Anda bisa mengganti nama file sesuai keinginan
+                    link.click();
+                })
+                .catch(error => {
+                    alert("Gagal mengunduh file.");
+                    console.error(error);
+                });
+        }
+    }
+</script>
+
+</body>
+</html>
